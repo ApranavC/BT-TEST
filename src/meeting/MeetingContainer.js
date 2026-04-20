@@ -370,13 +370,6 @@ export function MeetingContainer({
     [publishHandResponse, setPendingHands]
   );
 
-  const handleRemoveFromStage = useCallback(
-    (studentId) => {
-      publishRemoveFromStage(studentId, { persist: false });
-    },
-    [publishRemoveFromStage]
-  );
-
   return (
     <div className="fixed inset-0">
       <div ref={containerRef} className="h-full flex flex-col bg-gray-800">
