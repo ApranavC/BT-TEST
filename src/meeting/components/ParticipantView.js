@@ -62,7 +62,12 @@ function ParticipantsViewer({ isPresenting }) {
       localParticipant.id,
       ...pinnedParticipantId,
       ...regularParticipantIds,
-    ].slice(0, isPresenting ? 6 : 16);
+    ]
+      .filter((id) => {
+        const p = participants.get(id);
+        return p && p.mode === "SEND_AND_RECV";
+      })
+      .slice(0, isPresenting ? 6 : 16);
 
     return ids;
   }, [participants, pinnedParticipants, isPresenting]);

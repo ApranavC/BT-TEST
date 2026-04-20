@@ -1,5 +1,5 @@
-import { useMeeting, useParticipant } from "@videosdk.live/react-sdk";
-import React, { useMemo } from "react";
+import { useMeeting, useParticipant, usePubSub } from "@videosdk.live/react-sdk";
+import React, { useMemo, useCallback } from "react";
 import MicOffIcon from "../../icons/ParticipantTabPanel/MicOffIcon";
 import MicOnIcon from "../../icons/ParticipantTabPanel/MicOnIcon";
 import RaiseHand from "../../icons/ParticipantTabPanel/RaiseHand";
@@ -24,8 +24,8 @@ const ParticipantCamStatus = React.memo(({ participantId }) => {
   );
 });
 
-function ParticipantListItem({ participantId, raisedHand }) {
-  const { displayName, isLocal } = useParticipant(participantId);
+function ParticipantListItem({ participantId, raisedHand, onRemoveFromStage }) {
+  const { displayName, isLocal, mode } = useParticipant(participantId);
 
   return (
     <div className="mt-2 m-2 p-2 bg-gray-700 rounded-lg mb-0">
@@ -51,6 +51,15 @@ function ParticipantListItem({ participantId, raisedHand }) {
         )}
         <ParticipantMicStatus participantId={participantId} />
         <ParticipantCamStatus participantId={participantId} />
+        {!isLocal && mode === "SEND_AND_RECV" && (
+          <button
+            className="ml-1 px-2 py-1 text-xs rounded bg-red-500 hover:bg-red-600 text-white"
+            onClick={() => onRemoveFromStage(participantId)}
+            title="Remove from stage"
+          >
+            Remove
+          </button>
+        )}
       </div>
     </div>
   );
@@ -60,6 +69,14 @@ export function ParticipantPanel({ panelHeight }) {
   const { raisedHandsParticipants } = useMeetingAppContext();
   const mMeeting = useMeeting();
   const participants = mMeeting.participants;
+
+  const { publish: publishRemoveFromStage } = usePubSub("removeFromStage");
+  const handleRemoveFromStage = useCallback(
+    (studentId) => {
+      publishRemoveFromStage(studentId, { persist: false });
+    },
+    [publishRemoveFromStage]
+  );
 
   const sortedRaisedHandsParticipants = useMemo(() => {
     const participantIds = [...participants.keys()];
@@ -114,8 +131,10 @@ export function ParticipantPanel({ panelHeight }) {
           const { raisedHand, participantId: peerId } = part[index];
           return (
             <ParticipantListItem
+              key={peerId}
               participantId={peerId}
               raisedHand={raisedHand}
+              onRemoveFromStage={handleRemoveFromStage}
             />
           );
         })}

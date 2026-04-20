@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, createRef, memo } from "react";
+import React, { useState, useEffect, useRef, createRef, memo, useCallback } from "react";
 import { Constants, useMeeting, useParticipant, usePubSub } from "@videosdk.live/react-sdk";
 import { BottomBar } from "./components/BottomBar";
 import { SidebarConatiner } from "../components/sidebar/SidebarContainer";
@@ -89,9 +89,15 @@ export function MeetingContainer({
     setSelectedMic,
     setSelectedWebcam,
     setSelectedSpeaker,
+    pendingHands,
+    setPendingHands,
   } = useMeetingAppContext();
 
   const { useRaisedHandParticipants } = useMeetingAppContext();
+  const pendingHandsRef = useRef(pendingHands);
+  useEffect(() => {
+    pendingHandsRef.current = pendingHands;
+  }, [pendingHands]);
   const bottomBarHeight = 60;
   const localParticipantRef = useRef();
 
@@ -300,6 +306,77 @@ export function MeetingContainer({
     },
   });
 
+  // --- Android interop: raiseHand / lowerHand / handResponse / removeFromStage ---
+
+  usePubSub("raiseHand", {
+    onMessageReceived: (data) => {
+      const { senderId, senderName, message } = data;
+      const localParticipantId = localParticipantRef.current?.id;
+      if (senderId === localParticipantId) return;
+
+      const studentId = message; // payload is the student's participant id
+      setPendingHands((prev) => {
+        if (prev.find((h) => h.participantId === studentId)) return prev;
+        return [...prev, { participantId: studentId, senderName }];
+      });
+
+      new Audio(
+        `https://static.videosdk.live/prebuilt/notification.mp3`
+      ).play();
+
+      toast(`${nameTructed(senderName, 15)} wants to join stage`, {
+        position: "bottom-left",
+        autoClose: 4000,
+        hideProgressBar: true,
+        closeButton: false,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+      });
+    },
+  });
+
+  usePubSub("lowerHand", {
+    onMessageReceived: (data) => {
+      const { message } = data;
+      const studentId = message;
+      setPendingHands((prev) =>
+        prev.filter((h) => h.participantId !== studentId)
+      );
+    },
+  });
+
+  const { publish: publishHandResponse } = usePubSub("handResponse");
+  const { publish: publishRemoveFromStage } = usePubSub("removeFromStage");
+
+  const handleAccept = useCallback(
+    (studentId) => {
+      publishHandResponse(`accept:${studentId}`, { persist: false });
+      setPendingHands((prev) =>
+        prev.filter((h) => h.participantId !== studentId)
+      );
+    },
+    [publishHandResponse, setPendingHands]
+  );
+
+  const handleReject = useCallback(
+    (studentId) => {
+      publishHandResponse(`reject:${studentId}`, { persist: false });
+      setPendingHands((prev) =>
+        prev.filter((h) => h.participantId !== studentId)
+      );
+    },
+    [publishHandResponse, setPendingHands]
+  );
+
+  const handleRemoveFromStage = useCallback(
+    (studentId) => {
+      publishRemoveFromStage(studentId, { persist: false });
+    },
+    [publishRemoveFromStage]
+  );
+
   return (
     <div className="fixed inset-0">
       <div ref={containerRef} className="h-full flex flex-col bg-gray-800">
@@ -324,6 +401,56 @@ export function MeetingContainer({
         ) : (
           !isMeetingJoined && <WaitingToJoinScreen />
         )}
+
+        {/* Raise Hand Notification Popups */}
+        {pendingHands.length > 0 && (
+          <div
+            style={{
+              position: "fixed",
+              top: 16,
+              right: 16,
+              zIndex: 9999,
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+              maxHeight: "50vh",
+              overflowY: "auto",
+            }}
+          >
+            {pendingHands.map(({ participantId, senderName }) => (
+              <div
+                key={participantId}
+                className="bg-gray-750 rounded-lg shadow-lg"
+                style={{
+                  padding: "12px 16px",
+                  minWidth: 280,
+                  border: "1px solid #ffffff20",
+                }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-white text-sm font-semibold">
+                    {nameTructed(senderName, 20)} wants to join stage
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    className="flex-1 py-1.5 px-3 rounded text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+                    onClick={() => handleAccept(participantId)}
+                  >
+                    Accept
+                  </button>
+                  <button
+                    className="flex-1 py-1.5 px-3 rounded text-sm font-medium text-white bg-red-500 hover:bg-red-600"
+                    onClick={() => handleReject(participantId)}
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         <ConfirmBox
           open={meetingErrorVisible}
           successText="OKAY"

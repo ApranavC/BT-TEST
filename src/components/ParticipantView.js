@@ -99,16 +99,16 @@ const CornerDisplayStats = ({ participantId, isPresenting }) => {
     let audioStats = [];
     let videoStats = [];
     if (isPresenting) {
-      stats = await getShareStats();
+      // stats = await getShareStats();
     } else if (webcamStream) {
-      stats = await getVideoStats();
+      // stats = await getVideoStats();
     } else if (micStream) {
-      stats = await getAudioStats();
+      // stats = await getAudioStats();
     }
 
     if (webcamStream || micStream || isPresenting) {
-      videoStats = isPresenting ? await getShareStats() : await getVideoStats();
-      audioStats = isPresenting ? await getShareAudioStats() : await getAudioStats();
+      // videoStats = isPresenting ? await getShareStats() : await getVideoStats();
+      // audioStats = isPresenting ? await getShareAudioStats() : await getAudioStats();
     }
 
     let score = stats
@@ -327,10 +327,10 @@ const CornerDisplayStats = ({ participantId, isPresenting }) => {
                           }}
                         >
                           <p className="text-sm text-white font-semibold">{`Quality Score : ${score > 7
-                              ? "Good"
-                              : score > 4
-                                ? "Average"
-                                : "Poor"
+                            ? "Good"
+                            : score > 4
+                              ? "Average"
+                              : "Poor"
                             }`}</p>
 
                           <button

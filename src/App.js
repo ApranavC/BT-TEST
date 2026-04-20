@@ -36,13 +36,14 @@ function App() {
 
           <MeetingProvider
             config={{
-              meetingId,
+              meetingId: "aplq-bqfx-d4sh",
               micEnabled: micOn,
               webcamEnabled: webcamOn,
-              name: participantName ? participantName : "TestUser",
+              name: "Tutor",
               multiStream: true,
               customCameraVideoTrack: customVideoStream,
-              customMicrophoneAudioTrack: customAudioStream
+              customMicrophoneAudioTrack: customAudioStream,
+              signalingBaseUrl: "api.classplus-prod.videosdk.live"
             }}
             token={token}
             reinitialiseMeetingOnConfigChange={true}

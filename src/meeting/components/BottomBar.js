@@ -561,6 +561,63 @@ const RecordingBTN = () => {
   );
 };
 
+const HlsBTN = ({ isMobile, isTab }) => {
+  const { startHls, stopHls, hlsState } = useMeeting();
+
+  const isHlsOn =
+    hlsState === Constants.hlsEvents.HLS_STARTED ||
+    hlsState === Constants.hlsEvents.HLS_PLAYABLE;
+
+  const isRequestProcessing =
+    hlsState === Constants.hlsEvents.HLS_STARTING ||
+    hlsState === Constants.hlsEvents.HLS_STOPPING;
+
+  const _handleClick = () => {
+    if (isHlsOn) {
+      stopHls();
+    } else {
+      startHls({
+        layout: {
+          type: "SPOTLIGHT",
+          priority: "SPEAKER",
+          gridSize: 1,
+        },
+        theme: "DARK",
+        mode: "video-and-audio",
+        quality: "high",
+        orientation: "landscape",
+      });
+    }
+  };
+
+  const tooltip = isHlsOn
+    ? "Stop HLS"
+    : hlsState === Constants.hlsEvents.HLS_STARTING
+      ? "Starting HLS"
+      : hlsState === Constants.hlsEvents.HLS_STOPPING
+        ? "Stopping HLS"
+        : "Start HLS";
+
+  return isMobile || isTab ? (
+    <MobileIconButton
+      id="hls-btn"
+      tooltipTitle={tooltip}
+      buttonText={"HLS"}
+      isFocused={isHlsOn}
+      onClick={_handleClick}
+      disabled={isRequestProcessing}
+    />
+  ) : (
+    <OutlinedButton
+      onClick={_handleClick}
+      isFocused={isHlsOn}
+      tooltip={tooltip}
+      buttonText={"HLS"}
+      disabled={isRequestProcessing}
+    />
+  );
+};
+
 const ScreenShareBTN = ({ isMobile, isTab }) => {
   const { localScreenShareOn, toggleScreenShare, presenterId } = useMeeting();
 
@@ -745,6 +802,7 @@ export function BottomBar({ bottomBarHeight, setIsMeetingLeft }) {
       MIC: "MIC",
       RAISE_HAND: "RAISE_HAND",
       RECORDING: "RECORDING",
+      HLS: "HLS",
       PIP: "PIP",
       MEETING_ID_COPY: "MEETING_ID_COPY",
     }),
@@ -753,6 +811,7 @@ export function BottomBar({ bottomBarHeight, setIsMeetingLeft }) {
 
   const otherFeatures = [
     { icon: BottomBarButtonTypes.RAISE_HAND },
+    { icon: BottomBarButtonTypes.HLS },
     { icon: BottomBarButtonTypes.PIP },
     { icon: BottomBarButtonTypes.SCREEN_SHARE },
     { icon: BottomBarButtonTypes.CHAT },
@@ -813,6 +872,8 @@ export function BottomBar({ bottomBarHeight, setIsMeetingLeft }) {
                           >
                             {icon === BottomBarButtonTypes.RAISE_HAND ? (
                               <RaiseHandBTN isMobile={isMobile} isTab={isTab} />
+                            ) : icon === BottomBarButtonTypes.HLS ? (
+                              <HlsBTN isMobile={isMobile} isTab={isTab} />
                             ) : icon === BottomBarButtonTypes.SCREEN_SHARE ? (
                               <ScreenShareBTN
                                 isMobile={isMobile}
@@ -852,6 +913,7 @@ export function BottomBar({ bottomBarHeight, setIsMeetingLeft }) {
 
       <div className="flex flex-1 items-center justify-center" ref={tollTipEl}>
         <RecordingBTN />
+        <HlsBTN isMobile={isMobile} isTab={isTab} />
         <RaiseHandBTN isMobile={isMobile} isTab={isTab} />
         <MicBTN />
         <WebCamBTN />

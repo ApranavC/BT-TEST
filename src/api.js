@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://api.videosdk.live";
+const API_BASE_URL = "https://api.classplus-prod.videosdk.live";
 const VIDEOSDK_TOKEN = process.env.REACT_APP_VIDEOSDK_TOKEN;
 const API_AUTH_URL = process.env.REACT_APP_AUTH_URL;
 
@@ -24,7 +24,7 @@ export const createMeeting = async ({ token }) => {
   const url = `${API_BASE_URL}/v2/rooms`;
   const options = {
     method: "POST",
-    headers: { Authorization: token, "Content-Type": "application/json" },
+    headers: { Authorization: token, "Content-Type": "application/json" }
   };
 
   const response = await fetch(url, options)
